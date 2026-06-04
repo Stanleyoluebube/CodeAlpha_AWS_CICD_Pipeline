@@ -1,16 +1,15 @@
 name: Deploy to AWS
 
 on:
-push:
-branches:
-- main
+ push:
+  branches:
+  - main
 
 jobs:
-build-and-deploy:
-runs-on: ubuntu-latest
+ build-and-deploy:
+  runs-on: ubuntu-latest
 
-```
-steps:
+  steps:
   - name: Checkout
     uses: actions/checkout@v4
 
@@ -57,4 +56,3 @@ steps:
           --name agency-site \
           -p 8080:80 \
           ${{ steps.login-ecr.outputs.registry }}/stanley-cicd-app:latest
-```
