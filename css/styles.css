@@ -11314,3 +11314,18 @@ section#contact form#contactForm :-ms-input-placeholder {
   font-size: 0.9rem;
   font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
+
+.navbar-brand {
+    font-family: "Playfair Display", serif !important;
+    font-weight: 600 !important;
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+}
+
+.custom-title {
+    font-family: "Playfair Display", sans-serif;
+    font-weight: 700;
+    font-size: 2.5rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
