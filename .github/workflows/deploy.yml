@@ -1,41 +1,60 @@
 name: Deploy to AWS
 
 on:
-  push:
-    branches:
-      - main
+push:
+branches:
+- main
 
 jobs:
-  build-and-deploy:
+build-and-deploy:
+runs-on: ubuntu-latest
 
-    runs-on: ubuntu-latest
+```
+steps:
+  - name: Checkout
+    uses: actions/checkout@v4
 
-    steps:
+  - name: Configure AWS
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Checkout
-      uses: actions/checkout@v4
+  - name: Login ECR
+    id: login-ecr
+    uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Configure AWS
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
+  - name: Build Docker Image
+    run: |
+      docker build -t stanley-cicd-app .
 
-    - name: Login ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+  - name: Tag Image
+    run: |
+      docker tag stanley-cicd-app:latest \
+      ${{ steps.login-ecr.outputs.registry }}/stanley-cicd-app:latest
 
-    - name: Build Docker Image
-      run: |
-        docker build -t stanley-cicd-app .
+  - name: Push Image
+    run: |
+      docker push \
+      ${{ steps.login-ecr.outputs.registry }}/stanley-cicd-app:latest
 
-    - name: Tag Image
-      run: |
-        docker tag stanley-cicd-app:latest \
-        ${{ steps.login-ecr.outputs.registry }}/stanley-cicd-app:latest
+  - name: Deploy to EC2
+    uses: appleboy/ssh-action@v1.0.3
+    with:
+      host: ${{ secrets.EC2_HOST }}
+      username: ${{ secrets.EC2_USERNAME }}
+      key: ${{ secrets.EC2_SSH_KEY }}
+      script: |
+        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
 
-    - name: Push Image
-      run: |
-        docker push \
-        ${{ steps.login-ecr.outputs.registry }}/stanley-cicd-app:latest
+        docker pull ${{ steps.login-ecr.outputs.registry }}/stanley-cicd-app:latest
+
+        docker stop agency-site || true
+        docker rm agency-site || true
+
+        docker run -d \
+          --name agency-site \
+          -p 8080:80 \
+          ${{ steps.login-ecr.outputs.registry }}/stanley-cicd-app:latest
+```
